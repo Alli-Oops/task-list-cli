@@ -1,138 +1,190 @@
-from task_list import TaskList
+from requests.models import to_native_string
+from video_store import VideoStore
+
+def print_retro_video():
+    print("\n⭐⭐⭐ Retro 📼 Video ⭐⭐⭐\n")    
 
 def print_stars():
-    print("\n**************************\n")
+    print("\n⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐\n")
 
 def list_options():
-
     options = {
-        "1": "List all tasks", 
-        "2": "Create a task",
-        "3": "Select a task", 
-        "4": "Update selected task", 
-        "5": "Delete selected task", 
-        "6": "Mark selected task complete",
-        "7": "Mark selected task incomplete",
-        "8": "Delete all tasks",
-        "9": "List all options",
-        "10": "Quit"
-        }
+        "1": "add a video",
+        "2": "edit a video",
+        "3": "delete a video",
+        "4": "get information about all videos",
+        "5": "get information about one video",
+        ######################################
+        "6": "add a customer",
+        "7": "edit a customer",
+        "8": "delete a customer",
+        "9": "get information about one customer",
+        "10": "get information about all customers",
+        ######################################
+        "11": "check out a video to a customer",
+        "12": "check in a video from a customer",
+        "13": "Quit"
+    }
 
-    print_stars()
-    print("Welcome to the Task List CLI")
+    print_retro_video()
+    print("Welcome to Retro Video CLI")
     print("These are the actions you can perform")
     print_stars()
-    
+
     for choice_num in options:
         print(f"Option {choice_num}. {options[choice_num]}")
-
     print_stars()
 
     return options
 
-
-def make_choice(options, task_list):
+def make_choice(options, video_store): # delete ?? video_store, because unaccessed/unnecessary param
     valid_choices = options.keys()
     choice = None
-
     while choice not in valid_choices:
-        print("What would you like to do? Select 9 to see all options again")
+        print("What would you like to do?")
         choice = input("Make your selection using the option number: ")
-
-    if choice in ['4','5','6','7'] and task_list.selected_task == None:
-        print("You must select a task before updating it, deleting it, marking it complete, or marking it incomplete.")
-        print("Let's select a task!")
-        choice = "3"
-    
-    return choice
+    return choice 
 
 def run_cli(play=True):
+    #initialize retro_video_store
+    video_store = VideoStore(url="https://retro-video-store-api.herokuapp.com/")
 
-    #initialize task_list
-    task_list = TaskList(url="https://beccas-task-list-c15.herokuapp.com/")
-    
-    # print choices
     options = list_options()
 
     while play==True:
+        choice = make_choice(options, video_store)
 
-        # get input and validate
-        choice = make_choice(options, task_list)
-
-        task_list.print_selected()
-
-        if choice=='1':
+                #######################################
+                ########### VIDEO OPTIONS #############
+                #######################################
+### CHOICE 1 ###
+        if choice=="1": # add a video
+            print("Great! Let's add a new video.")
+            title=input("What is the title of the video? ")
+            release_date=input("What is the release date of the video? ")
+            total_inventory=input("What is the total inventory of the video?")
+            response = video_store.create_video(title=title, release_date=release_date, total_inventory=total_inventory)
             print_stars()
-            for task in task_list.list_tasks():
-                print(task)
-        elif choice=='2':
-            print("Great! Let's create a new task.")
-            title=input("What is the title of your task? ")
-            description=input("What is the description of your task? ")
-            response = task_list.create_task(title=title, description=description)
+            print(f"The New Video \'{title}\' with {response} was successfully added.")
+### CHOICE 2 ###
+        elif choice=="2": # edit a video
+            video_store.select_video()
+
+            print(f"Great! Let's edit the video: {video_store.selected_video}")
+            title=input("What is the new title of the video?")
+            release_date=input("What is the new release date of the video?")
+            total_inventory=input("What is the new total inventory of the video?")
+            response = video_store.update_video(title=title, release_date=release_date, total_inventory=total_inventory)
 
             print_stars()
-            print("New task:", response["task"])
+            print("Updated video:", response)
+### CHOICE 3 ###
+        elif choice=="3": # delete a video
+            video_store.delete_video()
+            print_stars()
+            print("\n❌ 📼 Video has been deleted. 📼 ❌\n")
+# ### CHOICE 4 ###
+        elif choice=="4": # "get information about all videos"
+            print("\n⭐ 📼 ⭐ 📼 ⭐ All Videos ⭐ 📼 ⭐ 📼 ⭐\n")
+            for video in video_store.list_videos():
+                print("📼 📼 📼 📼 📼 📼 📼 📼 📼 📼 📼")
+                print(f"Video ID: {video['id']}")
+                print(f"Release Date: {video['release_date']}")
+                print(f"Title: {video['title']}")
+                print(f"Total Inventory: {video['total_inventory']}")
+                print("📼 📼 📼 📼 📼 📼 📼 📼 📼 📼 📼")                
+                print("⭐ ⭐ ⭐ ⭐ ⭐ ⭐ ⭐ ⭐ ⭐ ⭐ ⭐")
+            print_stars()
+### CHOICE 5 ###
+        elif choice=="5": # "get information about one video",
+            print("\n📼 🔎 Let's Get the Video Information! 🔍 📼\n")
+            video_store.select_video()
 
-        elif choice=='3':
-            select_by = input("Would you like to select by? Enter title or id: ")
-            if select_by=="title":
-                title = input("Which task title would you like to select? ")
-                task_list.get_task(title=title)
-            elif select_by=="id":
-                id = input("Which task id would you like to select? ")
-                if id.isnumeric():
-                    id = int(id)
-                    task_list.get_task(id=id)
-            else:
-                print("Could not select. Please enter id or title.")
+                #######################################
+                ########## CUSTOMER OPTIONS ###########
+                #######################################
+### CHOICE 6 ###
+        elif choice=="6": # "add a customer"
+            print("Great! Let's add a new customer.")
+            name=input("What is the name of the customer? ")
+            phone=input("What is the phone number for the customer?")
+            postal_code=input("What is the postal code for the customer?")
+            response = video_store.create_customer(name=name, phone=phone, postal_code=postal_code) # registered_at=None,videos_checked_out_count=None
+            print_stars()
+            print("New customer:", response)
+### CHOICE 7 ###
+        elif choice=="7": # "edit a customer"
+            video_store.select_customer()
+
+            print(f"Great! Let's edit this customers information: {video_store.selected_customer}")
+            name=input("What is the new name of the customer?")
+            phone=input("What is the new phone number for the customer?")
+            postal_code=input("What is the new postal code for the customer?")
+            response = video_store.update_customer(name=name, phone=phone, postal_code=postal_code) #,registered_at=None,videos_checked_out_count=None 
+
+            print_stars()
+            print("Updated customer:", response) # ["customer"]
+### CHOICE 8 ###
+        elif choice=="8": # "delete a customer"
+            #video_store.select_customer()
+            video_store.delete_customer()
+            print("\n❌ 📼 Customer has been deleted. 📼 ❌\n")
+### CHOICE 9 ###
+        elif choice=="9": # "get information about one customer"
+            print("\n📼 🔎 Let's Get a Customer's Information! 🔍 📼\n")
+            video_store.select_customer()
+
+### CHOICE 10 ###
+        elif choice=="10": # "get information about all customers",
+            print_stars()
+            for customer in video_store.list_customers():
+                print(customer)
+
+            print("\n⭐ 🧑🏿‍🤝‍🧑🏾🧑🏼‍🤝‍🧑🏻 ⭐ All Customers ⭐ 🧑🏿‍🤝‍🧑🏾🧑🏼‍🤝‍🧑🏻 ⭐\n")
+            for customer in video_store.list_customers():
+                print("🍿 🍿 🍿 🍿 🍿 🍿 🍿 🍿 🍿 🍿 🍿")
+                print(f"Customer ID: {customer['id']}")
+                print(f"Customer Name: {customer['name']}")
+                print(f"Phone: {customer['phone']}")
+                print(f"Registration Date: {customer['registered_at']}")
+                print(f"Number of Videos Checked Out: {customer['videos_checked_out_count']}")
+                print("🍿 🍿 🍿 🍿 🍿 🍿 🍿 🍿 🍿 🍿 🍿")                
+                print("\n \n")
+            print_stars()
+
+                #######################################
+                ########### RENTAL OPTIONS ############
+                #######################################
+### CHOICE 11 ###
+        elif choice=="11": # "check out a video to a customer",
+            print("Great! Let's check out a video.")
+            print("First, Select a customer.")
+            print("Then, Select a video that the customer wants to check out.")
             
-            if task_list.selected_task:
-                print_stars()
-                print("Selected task: ", task_list.selected_task)
-
-        elif choice=='4':
-            print(f"Great! Let's update the task: {task_list.selected_task}")
-            title=input("What is the new title of your task? ")
-            description=input("What is the new description of your task? ")
-            response = task_list.update_task(title=title, description=description)
+            video_store.check_out()
 
             print_stars()
-            print("Updated task:", response["task"])
-        elif choice=='5':
-            task_list.delete_task()
+
+# ### CHOICE 12 ###
+        elif choice=="12": # "check in a video from a customer"
+            print("Great! Let's check out a video.")
+            print("First, Select the customer.")
+            print("Then, Select the video that the customer wants to return.")
+            
+            video_store.check_in()
 
             print_stars()
-            print("Task has been deleted.")
 
-            print_stars()
-            print(task_list.list_tasks())
-
-        elif choice=='6':
-            response = task_list.mark_complete()
-
-            print_stars()
-            print("Completed task: ", response["task"])
-
-        elif choice=='7':
-            response = task_list.mark_incomplete()
-
-            print_stars()
-            print("Incomplete task: ", response["task"])
-
-        elif choice=='8':
-            for task in task_list.list_tasks():
-                task_list.get_task(id=task['id'])
-                task_list.delete_task()
-
-            print_stars()
-            print("Deleted all tasks.")
-        elif choice=='9':
-            list_options()
-        elif choice=='10':
+                #######################################
+                ############# QUIT OPTION #############
+                #######################################
+# ### CHOICE 13 ###
+        elif choice=='13': # "13": "Quit"
             play=False
-            print("\nThanks for using the Task List CLI!")
+            print("\nThanks for using the Video Store CLI!\n")
 
-        print_stars()
+    print_retro_video()
 
 run_cli()
+
+    # 🤷 # 🍿 ♥️ ♥️ ♥️
